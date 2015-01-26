@@ -565,6 +565,9 @@ subpacknames = [
     'pyrocko.dataset',
     'pyrocko.dataset.topo',
     'pyrocko.streaming',
+    'pyrocko.squirrel',
+    'pyrocko.squirrel.io',
+    'pyrocko.squirrel.client',
 ]
 
 setup(
