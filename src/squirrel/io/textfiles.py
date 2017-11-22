@@ -1,5 +1,6 @@
 from pyrocko.squirrel import model
 import logging
+from builtins import str as newstr
 
 logger = logging.getLogger('pyrocko.squirrel.io.textfiles')
 
@@ -9,6 +10,7 @@ def provided_formats():
 
 
 def detect_pyrocko_stations(first512):
+    first512 = first512.decode('utf-8')
     for line in first512.splitlines():
         t = line.split(None, 5)
         if len(t) in (5, 6):
@@ -61,7 +63,7 @@ def iload(format, filename, segment, content):
                     if len(toks) == 5:
                         description = u''
                     else:
-                        description = unicode(toks[5])
+                        description = newstr(toks[5])
 
                     agn = ('', 'FDSN')[net != '']
 
@@ -96,8 +98,9 @@ def iload(format, filename, segment, content):
                     gain = float(toks[3])
 
                     if gain != 1.0:
-                        logger.warn('%s.%s.%s.%s gain value from stations '
-                                    'file ignored - please check' % (
+                        logger.warning(
+                            '%s.%s.%s.%s gain value from stations '
+                            'file ignored - please check' % (
                                         net, sta, loc, cha))
 
                     nut = model.make_channel_nut(
@@ -128,5 +131,6 @@ def iload(format, filename, segment, content):
                     raise Exception('invalid syntax')
 
             except Exception as e:
-                logger.warn('skipping invalid station/channel definition: %s '
-                            '(line: %i, file: %s' % (str(e), iline, filename))
+                logger.warning(
+                    'skipping invalid station/channel definition: %s '
+                    '(line: %i, file: %s' % (str(e), iline, filename))

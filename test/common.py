@@ -45,9 +45,9 @@ def make_dataset(dir=None, nstations=10, nchannels=3, tlen=10*D, deltat=0.01,
 
     nblocks = int(round(tlen / tinc))
 
-    for istation in xrange(nstations):
-        for ichannel in xrange(nchannels):
-            for iblock in xrange(nblocks):
+    for istation in range(nstations):
+        for ichannel in range(nchannels):
+            for iblock in range(nblocks):
                 tmin = tref + iblock*tinc
                 nsamples = int(round(tinc/deltat))
                 ydata = num.random.randint(-1000, 1001, nsamples).astype(

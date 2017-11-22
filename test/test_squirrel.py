@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import os
 import time
@@ -97,7 +98,7 @@ class SquirrelTestCase(unittest.TestCase):
     def test_dig_undig(self):
         nuts = []
         for file_name in 'abcde':
-            for file_element in xrange(2):
+            for file_element in range(2):
                 nuts.append(squirrel.Nut(
                     file_name=file_name,
                     file_format='test',
@@ -115,7 +116,7 @@ class SquirrelTestCase(unittest.TestCase):
             for nut in nuts2:
                 data.append((nut.file_name, nut.file_element))
         self.assertEqual(
-            [(file_name, i) for file_name in 'abcde' for i in xrange(2)],
+            [(file_name, i) for file_name in 'abcde' for i in range(2)],
             data)
 
         data = []
@@ -124,7 +125,7 @@ class SquirrelTestCase(unittest.TestCase):
                 data.append((nut.file_name, nut.file_element))
 
         self.assertEqual(
-            [(file_name, i) for file_name in 'ac' for i in xrange(2)],
+            [(file_name, i) for file_name in 'ac' for i in range(2)],
             data)
 
     def benchmark_load(self):
@@ -144,13 +145,13 @@ class SquirrelTestCase(unittest.TestCase):
                 fns, fileformat='detect', cachedirname=cachedirname, show_progress=False)
 
             ts.append(time.time())
-            print 'pile, initial scan: %g' % (ts[-1] - ts[-2])
+            print('pile, initial scan: %g' % (ts[-1] - ts[-2]))
 
             pile.make_pile(
                 fns, fileformat='detect', cachedirname=cachedirname, show_progress=False)
 
             ts.append(time.time())
-            print 'pile, rescan: %g' % (ts[-1] - ts[-2])
+            print('pile, rescan: %g' % (ts[-1] - ts[-2]))
 
             shutil.rmtree(cachedirname)
 
@@ -163,7 +164,7 @@ class SquirrelTestCase(unittest.TestCase):
                     ii += 1
 
             ts.append(time.time())
-            print 'plain load baseline: %g' % (ts[-1] - ts[-2])
+            print('plain load baseline: %g' % (ts[-1] - ts[-2]))
 
 
         if True:
@@ -176,7 +177,7 @@ class SquirrelTestCase(unittest.TestCase):
             assert ii == len(fns)
 
             ts.append(time.time())
-            print 'squirrel, no db: %g' % (ts[-1] - ts[-2])
+            print('squirrel, no db: %g' % (ts[-1] - ts[-2]))
 
         dbfilename = '/tmp/squirrel.db'
         if os.path.exists(dbfilename):
@@ -190,7 +191,7 @@ class SquirrelTestCase(unittest.TestCase):
 
         assert ii == len(fns)
         ts.append(time.time())
-        print 'squirrel, initial scan: %g' % (ts[-1] - ts[-2])
+        print('squirrel, initial scan: %g' % (ts[-1] - ts[-2]))
 
         ii = 0
         for nut in squirrel.iload(fns, content=[], squirrel=sq):
@@ -198,7 +199,7 @@ class SquirrelTestCase(unittest.TestCase):
 
         assert ii == len(fns)
         ts.append(time.time())
-        print 'squirrel, rescan: %g' % (ts[-1] - ts[-2])
+        print('squirrel, rescan: %g' % (ts[-1] - ts[-2]))
 
         ii = 0
         for nut in squirrel.iload(fns, content=[], squirrel=sq,
@@ -207,7 +208,7 @@ class SquirrelTestCase(unittest.TestCase):
 
         assert ii == len(fns)
         ts.append(time.time())
-        print 'squirrel, rescan, no mtime check: %g' % (ts[-1] - ts[-2])
+        print('squirrel, rescan, no mtime check: %g' % (ts[-1] - ts[-2]))
 
         ii = 0
         for fn, nuts in sq.undig_many(fns):
@@ -215,12 +216,12 @@ class SquirrelTestCase(unittest.TestCase):
 
         assert ii == len(fns)
         ts.append(time.time())
-        print 'squirrel, pure undig: %g' % (ts[-1] - ts[-2])
+        print('squirrel, pure undig: %g' % (ts[-1] - ts[-2]))
 
         sq.choose(fns)
 
         ts.append(time.time())
-        print 'squirrel, select workload: %g' % (ts[-1] - ts[-2])
+        print('squirrel, select workload: %g' % (ts[-1] - ts[-2]))
 
 
 if __name__ == "__main__":

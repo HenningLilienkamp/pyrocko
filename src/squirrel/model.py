@@ -41,7 +41,7 @@ def tjoin(seconds, offset, deltat):
     if seconds is None:
         return None
 
-    if deltat < 1e-3:
+    if deltat is not None and deltat < 1e-3:
         return util.hpfloat(seconds) + util.hpfloat(offset)
     else:
         return seconds + offset

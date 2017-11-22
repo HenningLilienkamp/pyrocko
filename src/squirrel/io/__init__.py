@@ -3,6 +3,7 @@ import logging
 
 from pyrocko.io_common import FileLoadError
 from pyrocko.squirrel.io import mseed, sac, datacube, stationxml, textfiles
+from builtins import str as newstr
 
 backend_modules = [mseed, sac, datacube, stationxml, textfiles]
 
@@ -31,7 +32,7 @@ def detect_format(filename):
     '''Determine file type from first 512 bytes.'''
 
     try:
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             data = f.read(512)
 
     except OSError as e:
@@ -96,7 +97,7 @@ def iload(
     n_db = 0
     n_load = 0
 
-    if isinstance(filenames, basestring):
+    if isinstance(filenames, (str, newstr)):
         filenames = [filenames]
         few = True
     else:

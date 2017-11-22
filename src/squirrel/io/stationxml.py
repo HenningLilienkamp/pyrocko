@@ -9,7 +9,7 @@ def provided_formats():
 
 
 def detect(first512):
-    if first512.find('<FDSNStationXML') != -1:
+    if first512.find(b'<FDSNStationXML') != -1:
         return 'stationxml'
 
     return None
@@ -35,7 +35,7 @@ def iload(format, filename, segment, content):
 
             tmin = station.start_date
             tmax = station.end_date
-            if tmax > far_future:
+            if tmax is not None and tmax > far_future:
                 tmax = None
 
             nut = model.make_station_nut(
@@ -63,7 +63,7 @@ def iload(format, filename, segment, content):
 
                 tmin = channel.start_date
                 tmax = channel.end_date
-                if tmax > far_future:
+                if tmax is not None and tmax > far_future:
                     tmax = None
 
                 if channel.sample_rate is not None:

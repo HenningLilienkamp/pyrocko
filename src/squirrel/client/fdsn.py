@@ -3,7 +3,10 @@ import os
 import copy
 import hashlib
 import logging
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import os.path as op
 from .base import Source, Selection
 from pyrocko.client import fdsn

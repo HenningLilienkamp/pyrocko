@@ -4,6 +4,13 @@ from pyrocko.squirrel.client import fdsn
 import sqlite3
 
 
+def iitems(d):
+    try:
+        return d.iteritems()
+    except AttributeError:
+        return d.items()
+
+
 class Squirrel(object):
     def __init__(self, database=':memory:'):
         self.conn = sqlite3.connect(database)
@@ -72,7 +79,7 @@ class Squirrel(object):
 
             by_files[k].append(nut)
 
-        for k, file_nuts in by_files.iteritems():
+        for k, file_nuts in iitems(by_files):
             c.execute('DELETE FROM files WHERE file_name = ?', k[0:1])
             c.execute('INSERT INTO files VALUES (?,?,?)', k)
             file_id = c.lastrowid
