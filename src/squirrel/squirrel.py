@@ -107,8 +107,8 @@ class Squirrel(object):
         sql = '''
             SELECT *
             FROM temp.selected_fns
-            INNER JOIN files ON temp.selected_fns.file_name = files.file_name
-            INNER JOIN nuts ON files.rowid = nuts.file_id
+            LEFT OUTER JOIN files ON temp.selected_fns.file_name = files.file_name
+            LEFT OUTER JOIN nuts ON files.rowid = nuts.file_id
             ORDER BY temp.selected_fns.rowid
         '''
 
@@ -119,7 +119,8 @@ class Squirrel(object):
                 yield fn, nuts
                 nuts = []
 
-            nuts.append(model.Nut(values_nocheck=values[1:]))
+            if values[1] is not None:
+                nuts.append(model.Nut(values_nocheck=values[1:]))
 
             fn = values[0]
 
