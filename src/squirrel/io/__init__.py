@@ -73,13 +73,13 @@ def iload(
         squirrel=None,
         check_mtime=True,
         commit=True,
-        index_only=False,
+        skip_up_to_date=False,
         content=['waveform', 'station', 'channel', 'response', 'event']):
 
     '''
     Iteratively load content or index from files.
 
-    :param filenames: list of strings, filenames to load from
+    :param filenames: iterator yielding strings, filenames to load from
     :param segment: ``str`` file-specific segment identifier (con only be used
         when loading from a single file.
     :param format: ``str`` file format or ``'detect'`` for autodetection
@@ -89,8 +89,8 @@ def iload(
         of every file
     :param commit: ``bool`` flag, whether to commit updated information to the
         index cache
-    :param index_only: ``bool`` flag, if ``True``, only update index for
-        new / modified files, do not yield any index nuts
+    :param skip_up_to_date: ``bool`` flag, if ``True``, only yield index nuts
+        for new / modified files
     :param content: list of strings, selection of content types to load
     '''
 
@@ -99,30 +99,24 @@ def iload(
 
     if isinstance(filenames, (str, newstr)):
         filenames = [filenames]
-        few = True
     else:
         if segment is not None:
             raise TypeError(
                 'iload: segment argument can only be used when loading from '
                 'a single file')
 
-        try:
-            few = len(filenames) < 100
-        except TypeError:
-            few = False
-
+    selection = None
     if squirrel:
-        if index_only:
-            filenames = squirrel.filter_modified_or_new(filenames, check_mtime)
+        selection = squirrel.create_selection(filenames)
+        if skip_up_to_date:
+            filenames = squirrel.filter_modified_or_new(selection, check_mtime)
 
-        if not few:
-            it = squirrel.undig_many(filenames)
-        else:
-            it = ((fn, squirrel.undig(fn)) for fn in filenames)
+        it = squirrel.undig_selection(selection)
 
     else:
-        if index_only:
-            raise TypeError('iload: index_only argument requires squirrel')
+        if skip_up_to_date:
+            raise TypeError(
+                'iload: skip_up_to_date argument requires squirrel')
 
         it = ((fn, []) for fn in filenames)
 
@@ -190,7 +184,11 @@ def iload(
 
             squirrel.dig(nuts)
 
-    if squirrel and commit:
-        squirrel.commit()
+    if squirrel:
+        if commit:
+            squirrel.commit()
+
+        if selection:
+            squirrel.drop_selection(selection)
 
     logger.debug('iload: from db: %i, from files: %i' % (n_db, n_load))

@@ -137,24 +137,25 @@ class SquirrelTestCase(unittest.TestCase):
 
         ts = []
 
-        if True:
+        if False:
             cachedirname = tempfile.mkdtemp('testcache')
 
             ts.append(time.time())
             pile.make_pile(
-                fns, fileformat='detect', cachedirname=cachedirname, show_progress=False)
+                fns, fileformat='detect', cachedirname=cachedirname,
+                show_progress=False)
 
             ts.append(time.time())
             print('pile, initial scan: %g' % (ts[-1] - ts[-2]))
 
             pile.make_pile(
-                fns, fileformat='detect', cachedirname=cachedirname, show_progress=False)
+                fns, fileformat='detect', cachedirname=cachedirname,
+                show_progress=False)
 
             ts.append(time.time())
             print('pile, rescan: %g' % (ts[-1] - ts[-2]))
 
             shutil.rmtree(cachedirname)
-
 
         if True:
             ts.append(time.time())
@@ -165,7 +166,6 @@ class SquirrelTestCase(unittest.TestCase):
 
             ts.append(time.time())
             print('plain load baseline: %g' % (ts[-1] - ts[-2]))
-
 
         if True:
             ts.append(time.time())
@@ -211,6 +211,16 @@ class SquirrelTestCase(unittest.TestCase):
         print('squirrel, rescan, no mtime check: %g' % (ts[-1] - ts[-2]))
 
         ii = 0
+        for nut in squirrel.iload(fns, content=[], squirrel=sq,
+                                  skip_up_to_date=True, check_mtime=False):
+            ii += 1
+
+        assert ii == 0
+        ts.append(time.time())
+        print('squirrel, rescan, index only (skip up to date): %g' % (
+            ts[-1] - ts[-2]))
+
+        ii = 0
         for fn, nuts in sq.undig_many(fns):
             ii += 1
 
@@ -222,6 +232,17 @@ class SquirrelTestCase(unittest.TestCase):
 
         ts.append(time.time())
         print('squirrel, select workload: %g' % (ts[-1] - ts[-2]))
+
+        for fn in fns:
+            sq.get_mtime(fn)
+
+        ts.append(time.time())
+        print('squirrel, query mtime (file-by-file): %g' % (ts[-1] - ts[-2]))
+
+        sq.get_mtimes(fns)
+
+        ts.append(time.time())
+        print('squirrel, query mtime (batch): %g' % (ts[-1] - ts[-2]))
 
 
 if __name__ == "__main__":

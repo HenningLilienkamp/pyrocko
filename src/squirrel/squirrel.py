@@ -18,6 +18,8 @@ class Squirrel(object):
         self._initialize_db()
         self._need_commit = False
         self._sources = []
+        self.selections = []
+        self.iselection = 0
 
     def add(self, filenames):
         io.iload(filenames, squirrel=self)
@@ -103,21 +105,42 @@ class Squirrel(object):
         return [model.Nut(values_nocheck=row)
                 for row in self.conn.execute(sql, (filename,))]
 
-    def undig_many(self, filenames):
+    def create_selection(self, filenames):
+        name = 'selected_fns_%i' % self.iselection
+        self.iselection += 1
+
         self.conn.execute(
-            'CREATE TEMP TABLE selected_fns (file_name text)')
+            'CREATE TEMP TABLE %s (file_name text)' % name)
 
         self.conn.executemany(
-            'INSERT INTO temp.selected_fns VALUES (?)',
+            'INSERT INTO temp.%s VALUES (?)' % name,
             ((s,) for s in filenames))
+
+        self.selections.append(name)
+
+        return name
+
+    def drop_selection(self, name):
+        if name in self.selections:
+            self.conn.execute(
+                'DROP TABLE temp.%s' % name)
+
+            self.selections.remove(name)
+
+    def check_selection(self, name):
+        if name not in self.selections:
+            raise Exception('no such selection: %s' % name)
+
+    def undig_selection(self, selection):
+        self.check_selection(selection)
 
         sql = '''
             SELECT *
-            FROM temp.selected_fns
-            LEFT OUTER JOIN files ON temp.selected_fns.file_name = files.file_name
+            FROM temp.%s
+            LEFT OUTER JOIN files ON temp.%s.file_name = files.file_name
             LEFT OUTER JOIN nuts ON files.rowid = nuts.file_id
-            ORDER BY temp.selected_fns.rowid
-        '''
+            ORDER BY temp.%s.rowid
+        ''' % (selection, selection, selection)  # noqa
 
         nuts = []
         fn = None
@@ -134,8 +157,14 @@ class Squirrel(object):
         if fn is not None:
             yield fn, nuts
 
-        self.conn.execute(
-            'DROP TABLE temp.selected_fns')
+    def undig_many(self, filenames):
+
+        selection = self.create_selection()
+
+        for fn, nuts in self.undig_selection(selection):
+            yield fn, nuts
+
+        self.drop_selection(selection)
 
     def get_mtime(self, filename):
         sql = '''
@@ -150,53 +179,61 @@ class Squirrel(object):
 
     def get_mtimes(self, filenames):
         self.conn.execute(
-            'CREATE TEMP TABLE selected_fns (file_name text)')
+            'CREATE TEMP TABLE selected_fns2 (file_name text)')
 
         self.conn.executemany(
-            'INSERT INTO temp.selected_fns VALUES (?)',
+            'INSERT INTO temp.selected_fns2 VALUES (?)',
             ((s,) for s in filenames))
 
         sql = '''
             SELECT files.file_mtime
-            FROM temp.selected_fns
-            LEFT OUTER JOIN files ON temp.selected_fns.file_name = files.file_name
-            ORDER BY temp.selected_fns.rowid
-        '''
+            FROM temp.selected_fns2
+            LEFT OUTER JOIN files ON temp.selected_fns2.file_name = files.file_name
+            ORDER BY temp.selected_fns2.rowid
+        '''  # noqa
 
         mtimes = [values[0] for values in self.conn.execute(sql)]
 
         self.conn.execute(
-            'DROP TABLE temp.selected_fns')
+            'DROP TABLE temp.selected_fns2')
 
         return mtimes
 
+    def iter_mtimes(self, filenames):
+        self.conn.execute(
+            'CREATE TEMP TABLE selected_fns2 (file_name text)')
+
+        self.conn.executemany(
+            'INSERT INTO temp.selected_fns2 VALUES (?)',
+            ((s,) for s in filenames))
+
+        sql = '''
+            SELECT files.file_name, files.file_mtime
+            FROM temp.selected_fns2
+            LEFT OUTER JOIN files ON temp.selected_fns2.file_name = files.file_name
+            ORDER BY temp.selected_fns2.rowid
+        '''  # noqa
+
+        for row in self.conn.execute(sql):
+            yield row
+
+        self.conn.execute(
+            'DROP TABLE temp.selected_fns2')
+
     def filter_modified_or_new(self, filenames, check_mtime):
-        modified = []
+        for filename, mtime_db in self.iter_mtimes(filenames):
+            if mtime_db is None or not os.path.exists(filename):
+                yield filename
 
-        for filename in filenames:
-            if not os.path.exists(filename):
-                modified.append(filename)
-                continue
+            if check_mtime:
+                try:
+                    mtime_file = os.stat(filename)[8]
+                except OSError:
+                    yield filename
+                    continue
 
-            sql = '''
-                SELECT file_mtime
-                FROM files
-                WHERE file_name = ?'''
-
-            rows = self.conn.execute(sql, (filename,))
-            if rows:
-                if check_mtime:
-                    mtime_db = rows[0][0]
-                    try:
-                        mtime_file = os.stat(filename)[8]
-                    except OSError:
-                        modified.append(filename)
-
-                    if mtime_db != mtime_file:
-                        modified.append(filename)
-
-            else:
-                modified.append(filename)
+                if mtime_db != mtime_file:
+                    yield filename
 
     def choose(self, filenames):
         self.conn.execute(
