@@ -1197,7 +1197,7 @@ def detect_gmt_installations():
 
     try:
         version = str(subprocess.check_output(
-            ['gmt', '--version']).strip().decode('ascii'))
+            ['gmt', '--version']).strip().decode('ascii')).split('_')[0]
         gmtbin = str(subprocess.check_output(
             ['gmt', '--show-bindir']).strip().decode('ascii'))
         installations[version] = {
